@@ -1,5 +1,16 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
 beautifulsoup4
 pytest
+nltk
+celery[redis]
+redis
+psycopg2-binary
+sqlalchemy
+alembic
+python-dotenv
+gunicorn
+prometheus-client
+structlog
+pydantic-settings

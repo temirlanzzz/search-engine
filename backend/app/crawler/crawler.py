@@ -4,10 +4,25 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+from app.config import settings
+from app.services.document_service import DocumentService
+from app.database import SessionLocal
+from app.utilts.tokenizer import tokenize_text
 
-# Base folder to save docs
-DATA_DIR = "../../../data/docs"
-os.makedirs(DATA_DIR, exist_ok=True)
+def get_website_name(url: str) -> str | None:
+    try:
+        # Ensure the URL has a scheme so urlparse works correctly
+        if not url.startswith(('http://', 'https://')):
+            url = 'https://' + url
+
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ''
+        
+        # Strip "www." if present
+        return hostname.removeprefix('www.')
+    except Exception as e:
+        print(f"Invalid URL: {url} — {e}")
+        return None
 
 class SimpleCrawler:
     def __init__(self, seed_urls, max_pages=50, delay=1):
@@ -15,8 +30,10 @@ class SimpleCrawler:
         self.to_visit = list(seed_urls)
         self.max_pages = max_pages
         self.delay = delay
+        self.db = SessionLocal()
+        self.document_service = DocumentService(self.db)
 
-    def crawl(self):
+    def crawl_and_store(self):
         count = 0
         while self.to_visit and count < self.max_pages:
             url = self.to_visit.pop(0)
@@ -26,16 +43,36 @@ class SimpleCrawler:
             try:
                 print(f"Crawling: {url}")
                 response = requests.get(url, timeout=5)
-                if "text/html" not in response.headers.get("Content-Type", ""):
-                    continue
+                content_type = response.headers.get("Content-Type", "")
+                
+                title = "No Title"
+                text = ""
+                links = []
+                
+                if "text/html" in content_type:
+                    # Parse HTML content
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    title = soup.title.string if soup.title else "No Title"
+                    text = soup.get_text(separator=" ", strip=True)
+                    links = [urljoin(url, a.get("href")) for a in soup.find_all("a", href=True)]
+                    links = self._filter_links(links, url)
+                elif "application/json" in content_type:
+                    # Parse JSON content
+                    try:
+                        json_data = response.json()
+                        title = f"JSON Response from {get_website_name(url)}"
+                        text = json.dumps(json_data, indent=2)
+                    except json.JSONDecodeError:
+                        title = f"Invalid JSON from {get_website_name(url)}"
+                        text = response.text
+                else:
+                    # Handle other content types as plain text
+                    title = f"Content from {get_website_name(url)}"
+                    text = response.text
 
-                soup = BeautifulSoup(response.text, "html.parser")
-                title = soup.title.string if soup.title else "No Title"
-                text = soup.get_text(separator=" ", strip=True)
-                links = [urljoin(url, a.get("href")) for a in soup.find_all("a", href=True)]
-                links = self._filter_links(links, url)
-
-                self._save_doc(count, url, title, text)
+                # Save document to database
+                self._save_doc_to_db(url, title, text)
+                
                 self.to_visit.extend(links)
                 self.visited.add(url)
                 count += 1
@@ -43,16 +80,18 @@ class SimpleCrawler:
 
             except Exception as e:
                 print(f"Failed to crawl {url}: {e}")
+        
+        # Close database session
+        self.db.close()
 
-    def _save_doc(self, doc_id, url, title, text):
-        doc = {
-            "id": doc_id,
-            "url": url,
-            "title": title,
-            "text": text,
-        }
-        with open(os.path.join(DATA_DIR, f"{doc_id}.json"), "w", encoding="utf-8") as f:
-            json.dump(doc, f, ensure_ascii=False, indent=2)
+    def _save_doc_to_db(self, url, title, text):
+        try:
+            # Create document using the correct method signature
+            document = self.document_service.create_document(url, title, text)
+            print(f"Saved document to database: {title}")
+            
+        except Exception as e:
+            print(f"Failed to save document to database: {e}")
 
     def _filter_links(self, links, base_url):
         base_domain = urlparse(base_url).netloc
@@ -63,7 +102,3 @@ class SimpleCrawler:
                 filtered.append(link)
         return list(set(filtered))
 
-if __name__ == "__main__":
-    seed_urls = ["https://web-scraping.dev"]
-    crawler = SimpleCrawler(seed_urls, max_pages=5, delay=1)
-    crawler.crawl()

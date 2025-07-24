@@ -1,0 +1,29 @@
+.custom-button {
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+.custom-input {
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 100%;
+}
+.custom-container{
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
