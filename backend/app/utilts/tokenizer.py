@@ -1,42 +1,14 @@
 import re
 import os
 import json
-import nltk
 from app.config import settings
 
-# Download NLTK data if not already present
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    try:
-        nltk.download('stopwords', quiet=True)
-    except Exception as e:
-        # If download fails, we'll handle it gracefully
-        pass
-
-# Use configuration for data directory
+# Deterministic, offline tokenizer: no downloads or filesystem work at import time.
+STOPWORDS = frozenset("a an the and or of to in is it for on with as by are be that this from at should".split())
 DATA_DIR = os.path.join(settings.data_dir, 'tokens')
-os.makedirs(DATA_DIR, exist_ok=True)
 
 def tokenize_text(text: str) -> list[str]:
-    #lowercase
-    text = text.lower()
-    #remove punctuation
-    text = re.sub(r'[^\w\s]', '', text)
-    #split into words
-    words = text.split(' ')
-    
-    #remove stopwords if available
-    try:
-        stopwords = nltk.corpus.stopwords.words('english')
-        words = [word for word in words if word not in stopwords]
-    except LookupError:
-        # If stopwords are not available, continue without filtering
-        pass
-    
-    #remove empty strings
-    words = [word for word in words if word != '']
-    return words
+    return [word for word in re.findall(r"[^\W_]+", text.lower()) if word not in STOPWORDS]
 
 def doc_to_tokens(doc: str) -> list[str]:
     #open doc and read text
@@ -53,6 +25,7 @@ def doc_to_tokens(doc: str) -> list[str]:
         return token_doc
 
 def tokenize_docs(docs: list[str]) -> list[str]:
+    os.makedirs(DATA_DIR, exist_ok=True)
     #tokenize each doc
     token_docs = []
     for doc in docs:

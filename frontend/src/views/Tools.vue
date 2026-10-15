@@ -84,6 +84,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "LegacyTools" })
 import TaskMonitor from "@/components/TaskMonitor.vue"
 import Menu from '@/components/Menu.vue'
 import CrawlStats from '@/components/CrawlStats.vue'

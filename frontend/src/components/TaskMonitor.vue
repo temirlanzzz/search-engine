@@ -127,7 +127,7 @@ const pollStatus = async (id: string, updateStatus: (s: string) => void) => {
       if (["SUCCESS", "FAILURE"].includes(res.data.status)) {
         clearInterval(interval)
       }
-    } catch (err) {
+    } catch {
       updateStatus("ERROR")
       clearInterval(interval)
     }

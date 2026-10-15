@@ -1,17 +1,13 @@
-from app.utilts.tokenizer import tokenize_text, tokenize_docs
-def test_tokenize_text():
-    text = "Hello, world! This is a test sentence. Runinng should be run"
-    expected = ["hello", "world", "test", "sentenc", "runinng", "run"]
-    result = tokenize_text(text)
-    assert result == expected
+import json
+from app.utilts import tokenizer
 
-def test_tokenize_docs():
-    list_of_docs = ['../../../data/docs/0.json', '../../../data/docs/1.json', '../../../data/docs/2.json']
-    tokens = tokenize_docs(list_of_docs)
-    assert len(tokens) == 3
-    assert tokens[1]['id'] == 1
-    assert tokens[1]['url'] == 'https://web-scraping.dev/blocked'
-    assert tokens[1]['title'] == 'web-scraping.dev - You\'ve been blocked'
-    assert tokens[1]['text'] == ["webscrapingdev","","youv","block","webscrapingdev","youv","block","","weve","detect","unusu","connect","ip","address","10011236","refer","id","8l0ck1ng15l4m3","unblock","block","persist","continu","brows","webscrapingdev","","enabl","persist","block","persist","flag","mock","page","your","actual","block","scrapfli","academi","v130","made","scrapfli"
-  ]
-    
+def test_tokenize_text():
+    assert tokenizer.tokenize_text('The café\nsearch-engine is useful.') == ['café', 'search', 'engine', 'useful']
+
+def test_tokenize_docs(tmp_path, monkeypatch):
+    source = tmp_path / 'doc.json'
+    source.write_text(json.dumps({'id': 'a', 'url': 'https://example.org', 'title': 'Example', 'text': 'A small test'}))
+    monkeypatch.setattr(tokenizer, 'DATA_DIR', str(tmp_path / 'tokens'))
+    result = tokenizer.tokenize_docs([str(source)])
+    assert result[0]['text'] == ['small', 'test']
+    assert json.loads((tmp_path / 'tokens/a.json').read_text()) == result[0]

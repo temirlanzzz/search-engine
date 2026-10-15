@@ -68,7 +68,7 @@ const rebuild = async () => {
   status.value = ""
   
   try {
-    const res = await axios.post("/api/task/rebuild")
+    await axios.post("/api/task/rebuild")
     status.value = "success"
   } catch (error) {
     console.error('Failed to rebuild index:', error)

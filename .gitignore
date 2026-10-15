@@ -45,3 +45,5 @@ frontend/.env
 # Temporary files
 *.tmp
 *.temp
+frontend/playwright-report/
+frontend/test-results/

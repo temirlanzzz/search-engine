@@ -25,6 +25,7 @@ class IndexService:
             
             if total_docs == 0:
                 logger.warning("No documents found for indexing")
+                self._store_search_index({}, {})
                 return {}, {}
             
             # Calculate document frequency for each term
@@ -39,7 +40,8 @@ class IndexService:
                     term = token.token
                     # Count term frequency in this document
                     doc_terms[term] = doc_terms.get(term, 0) + 1
-                    # Count how many documents contain this term
+                # Document frequency counts each distinct term once per document.
+                for term in doc_terms:
                     term_doc_freq[term] = term_doc_freq.get(term, 0) + 1
                 
                 doc_term_freq[doc.id] = doc_terms
@@ -126,6 +128,7 @@ class IndexService:
                     logger.info(f"Found index record for token '{token}' with {len(tfidf_data)} documents")
                 else:
                     logger.info(f"No index record found for token '{token}'")
+                    token_results[token] = {}
             
             logger.info(f"Token results: {list(token_results.keys())}")
             if not token_results:
@@ -159,7 +162,7 @@ class IndexService:
                 doc_scores[doc_id] = score
             
             # Sort by score and get top results
-            sorted_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
+            sorted_docs = sorted(doc_scores.items(), key=lambda x: (-x[1], str(x[0])))
             
             # Get document details
             results = []

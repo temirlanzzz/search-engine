@@ -24,6 +24,7 @@
 </template>
   
 <script setup lang="ts">
+defineOptions({ name: "LegacyTasks" })
 import TaskMonitor from "@/components/TaskMonitor.vue"
 import Menu from '@/components/Menu.vue'
 </script>
