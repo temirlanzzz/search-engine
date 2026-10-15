@@ -13,7 +13,9 @@ npm ci
 npm run dev
 ```
 
-Open the Vite URL shown in the terminal. `npm run build` produces a static `frontend/dist` deployment; `npm run preview` serves it. For a repository GitHub Pages deployment, build with `GITHUB_PAGES=true npm run build` (base path `/search-engine/`). The workflow verifies every push/PR and deploys **only main**, when repository Pages is configured for GitHub Actions.
+Open the Vite URL shown in the terminal. `npm run build` produces a static `frontend/dist` deployment; `npm run preview` serves it. For a repository GitHub Pages deployment, build with `GITHUB_PAGES=true npm run build` (base path `/search-engine/`). The workflow verifies every push/PR. Repository-specific deployment is disabled unless the `ENABLE_PAGES` repository variable is explicitly set to `true` and Pages is already configured for GitHub Actions; it then deploys **only main**.
+
+The demo is hosted as the `search-engine/` subfolder of the existing portfolio site, rather than enabling a second Pages site. To refresh that copy, run `GITHUB_PAGES=true npm run build` in `frontend`, then copy the contents of `frontend/dist/` into the portfolio repository’s `search-engine/` folder and publish through its existing Pages process. Keep `/search-engine/` as the base path. Do not overwrite unrelated portfolio files.
 
 ## Try it
 
@@ -52,6 +54,8 @@ npm run build             # Vue/TypeScript check + Vite production build
 npx playwright install chromium
 npm run test:e2e           # Desktop/mobile flows and screenshots
 ```
+
+Dependency hygiene: unused Tailwind/Vue-devtools packages were removed, runtime/build dependencies were refreshed within their existing major versions, and ESLint uses explicit Vue/TypeScript parsers instead of a glob-heavy convenience preset. `npm audit` reported zero known advisories on 2026-10-15; CI rejects high/critical advisories. This is a point-in-time check, not a security guarantee.
 
 The Playwright suite covers model switching, explanations, AND unknown terms, empty/repeated searches, import validation, restore, overflow, and runtime exceptions. CI uploads HTML reports, failure traces, and screenshots as the `browser-qa` artifact.
 
